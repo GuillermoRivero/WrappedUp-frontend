@@ -1,15 +1,25 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-background: #dfe7ec;
+  --color-primary: #63b4b7;
+  --color-primary-dark: #60a3b4;
+  --color-secondary: #adbfc7;
+  --color-accent: #8aa4a9;
+  --color-neutral: #afb09e;
+  --color-neutral-dark: #aa9e97;
+  --color-success: #768a5f;
+  --color-primary-darker: #365f60;
+  --color-text: #746a64;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--color-background);
+  --color-foreground: var(--color-text);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-inter);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -20,7 +30,73 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-[#63b4b7] hover:bg-[#60a3b4] text-white font-medium py-2 px-4 rounded-md transition-colors duration-200;
+  }
+
+  .btn-secondary {
+    @apply bg-[#adbfc7] hover:bg-[#8aa4a9] text-[#365f60] font-medium py-2 px-4 rounded-md transition-colors duration-200;
+  }
+
+  .input-field {
+    @apply w-full px-3 py-2 bg-white border border-[#adbfc7] rounded-md text-[#365f60] placeholder-[#8aa4a9] focus:outline-none focus:ring-2 focus:ring-[#63b4b7] focus:border-transparent transition-colors duration-200;
+  }
+
+  .card {
+    @apply bg-white rounded-lg shadow-md p-8 border border-[#adbfc7];
+  }
+
+  .nav-link {
+    @apply text-[#365f60] hover:text-[#63b4b7] transition-colors duration-200;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-dark);
+}
+
+@keyframes scan {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(100%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.animate-scan {
+  animation: scan 2s ease-in-out infinite;
+}
+
+@layer utilities {
+  .grid-cols-30 {
+    grid-template-columns: repeat(30, minmax(0, 1fr));
+  }
+  
+  .grid-cols-31 {
+    grid-template-columns: repeat(31, minmax(0, 1fr));
+  }
 }
