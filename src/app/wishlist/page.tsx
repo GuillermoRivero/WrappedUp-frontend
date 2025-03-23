@@ -4,17 +4,16 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { wishlist } from '@/services/api';
 import { WishlistItem } from '@/types/wishlist';
-import AddToWishlist from '@/components/AddToWishlist';
 import WishlistCard from '@/components/WishlistCard';
 import WishlistHeader from '@/components/WishlistHeader';
 import Head from 'next/head';
+import Link from 'next/link';
 
 export default function WishlistPage() {
   const { user } = useAuth();
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showAddModal, setShowAddModal] = useState(false);
   const [sortBy, setSortBy] = useState<'priority' | 'date' | 'title'>('priority');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
@@ -64,11 +63,6 @@ export default function WishlistPage() {
     }
   };
 
-  // Function to handle adding a new item to the wishlist
-  const handleAddItem = (newItem: WishlistItem) => {
-    setWishlistItems((prevItems) => [...prevItems, newItem]);
-  };
-
   // Handle sort change from the header component 
   const handleSortChange = (newSortBy: 'priority' | 'date' | 'title', newSortDirection: 'asc' | 'desc') => {
     setSortBy(newSortBy);
@@ -113,7 +107,6 @@ export default function WishlistPage() {
           sortBy={sortBy}
           sortDirection={sortDirection}
           onSortChange={handleSortChange}
-          onAddClick={() => setShowAddModal(true)}
         />
       )}
       
@@ -132,15 +125,15 @@ export default function WishlistPage() {
           </svg>
           <h2 className="text-2xl font-bold text-[#365f60] mb-2">Your wishlist is empty</h2>
           <p className="text-[#6b8e92] mb-6">Add some books to your wishlist to keep track of what you'd like to read.</p>
-          <button
-            onClick={() => setShowAddModal(true)}
+          <Link
+            href="/wishlist/add"
             className="inline-flex items-center px-4 py-2 bg-[#365f60] text-white rounded-md hover:bg-[#4d797e] transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             Add your first book
-          </button>
+          </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -154,14 +147,6 @@ export default function WishlistPage() {
             />
           ))}
         </div>
-      )}
-
-      {showAddModal && (
-        <AddToWishlist
-          onClose={() => setShowAddModal(false)}
-          onAdd={handleAddItem}
-          refreshWishlist={fetchWishlist}
-        />
       )}
     </div>
   );

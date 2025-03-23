@@ -2,16 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useDebounce } from '@/hooks/useDebounce';
 import api from '@/services/api';
-import { useZxing } from 'react-zxing';
+import BookSearch, { Book as SearchBook } from '@/components/BookSearch';
 
 interface ReviewFormProps {
   onSubmit: () => void;
   onCancel: () => void;
 }
 
-interface Book {
+interface ReviewBook {
   id: string;
   title: string;
   author: string;
@@ -27,9 +26,7 @@ interface Book {
 
 export default function ReviewForm({ onSubmit, onCancel }: ReviewFormProps) {
   const { user } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Book[]>([]);
-  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [selectedBook, setSelectedBook] = useState<ReviewBook | null>(null);
   const [formData, setFormData] = useState({
     text: '',
     rating: 5,
@@ -37,165 +34,33 @@ export default function ReviewForm({ onSubmit, onCancel }: ReviewFormProps) {
     endDate: '',
   });
   const [loading, setLoading] = useState(false);
-  const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showScanner, setShowScanner] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
-
-  // Function to search by ISBN
-  const searchByISBN = async (isbn: string) => {
-    if (!isbn) return;
-    
-    console.log("Searching for ISBN:", isbn);
-    setSearching(true);
-    setSearchResults([]); // Clear previous results
-    
-    try {
-      const response = await api.get(`/api/books/search?query=${encodeURIComponent(isbn)}`);
-      console.log("ISBN search results:", response.data);
-      setSearchResults(response.data);
-    } catch (err) {
-      console.error('ISBN search failed:', err);
-      setSearchResults([]);
-      setError('Failed to search for ISBN. Please try again or search manually.');
-    } finally {
-      setSearching(false);
-    }
-  };
-
-  // Debounce search query with 500ms delay
-  const debouncedSearchQuery = useDebounce(searchQuery, 500);
-
-  // Barcode scanner setup
-  const { ref } = useZxing({
-    onDecodeResult(result: { getText: () => string }) {
-      const isbn = result.getText();
-      console.log("Barcode detected:", isbn);
-      
-      // Close the scanner after successful scan
-      setShowScanner(false);
-      
-      // Set the search query
-      setSearchQuery(isbn);
-      
-      // Immediately search for the ISBN without waiting for debounce
-      searchByISBN(isbn);
-    },
-    onError(error: unknown) {
-      console.error("Scanner error:", error);
-      setCameraError("Error accessing camera: " + (error instanceof Error ? error.message : String(error)));
-    },
-    constraints: {
-      video: {
-        facingMode: "environment",
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
-      }
-    },
-    paused: !showScanner, // Only activate camera when scanner is shown
-  });
-
-  // Effect for handling search
-  useEffect(() => {
-    const searchBooks = async () => {
-      if (debouncedSearchQuery.length < 2) {
-        setSearchResults([]);
-        return;
-      }
-
-      setSearching(true);
-      setSearchResults([]); // Clear previous results when starting a new search
-      try {
-        const response = await api.get(`/api/books/search?query=${encodeURIComponent(debouncedSearchQuery)}`);
-        
-        // Calculate similarity score between two strings
-        const calculateSimilarity = (bookTitle: string, searchTerm: string) => {
-          const title = bookTitle.toLowerCase();
-          const term = searchTerm.toLowerCase();
-          
-          // Exact match gets highest score
-          if (title === term) return 1;
-          
-          // Starting with search term gets high score
-          if (title.startsWith(term)) return 0.8;
-          
-          // Contains exact search term gets medium score
-          if (title.includes(term)) return 0.6;
-          
-          // Contains parts of search term gets lower score
-          const words = term.split(' ');
-          const matchingWords = words.filter(word => title.includes(word));
-          if (matchingWords.length > 0) {
-            return 0.4 * (matchingWords.length / words.length);
-          }
-          
-          return 0;
-        };
-
-        // Sort results: books with covers first, then by title similarity
-        const sortedResults = [...response.data].sort((a, b) => {
-          // First, sort by presence of cover image
-          if (a.coverUrl && !b.coverUrl) return -1;
-          if (!a.coverUrl && b.coverUrl) return 1;
-          
-          // Then, sort by title similarity
-          const similarityA = calculateSimilarity(a.title, debouncedSearchQuery);
-          const similarityB = calculateSimilarity(b.title, debouncedSearchQuery);
-          
-          return similarityB - similarityA;
-        });
-
-        setSearchResults(sortedResults);
-      } catch (err) {
-        console.error('Search failed:', err);
-        setSearchResults([]);
-      } finally {
-        setSearching(false);
-      }
+  
+  // Convert search book to review book
+  const handleBookSelected = (book: SearchBook) => {
+    const reviewBook: ReviewBook = {
+      id: book.id || '',
+      title: book.title,
+      author: book.author,
+      releaseYear: book.releaseYear || book.firstPublishYear || 0,
+      coverUrl: book.coverUrl || '',
+      description: book.description,
+      isbn: book.isbn,
+      publisher: book.publisher,
+      numberOfPages: book.numberOfPages,
+      openLibraryKey: book.openLibraryKey || '',
     };
-
-    searchBooks();
-  }, [debouncedSearchQuery]);
-
-  // Update search input without triggering immediate search
-  const handleSearchInput = (query: string) => {
-    setSearchQuery(query);
-    if (query.length < 2) {
-      setSearchResults([]); // Clear results when input is too short
-    }
-  };
-
-  // Function to handle camera access
-  const handleOpenScanner = () => {
-    setCameraError(null);
+    setSelectedBook(reviewBook);
     
-    // Check if we're in a secure context (HTTPS or localhost)
-    if (typeof window !== 'undefined' && window.location.protocol !== 'https:' && 
-        window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-      setCameraError("Camera access requires a secure connection (HTTPS). Please use HTTPS to enable the barcode scanner.");
-      setShowScanner(true); // Still show the scanner UI with the error message
-      return;
+    // Set default dates if they're not already set
+    if (!formData.startDate || !formData.endDate) {
+      const today = new Date().toISOString().split('T')[0];
+      setFormData(prevData => ({
+        ...prevData,
+        endDate: today,
+        startDate: prevData.startDate || today
+      }));
     }
-    
-    // Check if the browser supports getUserMedia
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setCameraError("Your browser doesn't support camera access. Please try using a modern browser like Chrome, Firefox, or Safari.");
-      setShowScanner(true); // Still show the scanner UI with the error message
-      return;
-    }
-    
-    // Attempt to get camera permissions
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(() => {
-        // Permission granted, now show the scanner
-        setShowScanner(true);
-        console.log("Camera permission granted, activating scanner");
-      })
-      .catch((err) => {
-        console.error("Camera permission error:", err);
-        setCameraError("Camera permission denied. Please allow camera access in your browser settings.");
-        setShowScanner(true); // Still show the scanner UI with the error message
-      });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -229,275 +94,260 @@ export default function ReviewForm({ onSubmit, onCancel }: ReviewFormProps) {
     }
   };
 
+  // Function to generate rating stars display
+  const renderRatingStars = (rating: number) => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <button
+          key={i}
+          type="button"
+          onClick={() => setFormData({ ...formData, rating: i })}
+          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+            formData.rating >= i 
+              ? 'bg-amber-100 text-amber-600 shadow-sm transform scale-105'
+              : 'bg-[#f1f5f5] text-[#8aa4a9] hover:bg-amber-50 hover:text-amber-500'
+          }`}
+        >
+          ★
+        </button>
+      );
+    }
+    return stars;
+  };
+
+  // Function to get rating text
+  const getRatingText = (rating: number): string => {
+    switch (rating) {
+      case 1: return 'Did not like it';
+      case 2: return 'It was ok';
+      case 3: return 'Liked it';
+      case 4: return 'Really liked it';
+      case 5: return 'Loved it';
+      default: return '';
+    }
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 border border-[#adbfc7]">
-      <h2 className="text-2xl font-bold text-[#365f60] mb-4">Write a Book Review</h2>
-      <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="p-6 border-b border-[#e0e7e9]">
+        <h2 className="text-2xl font-bold text-[#365f60]">Write a Book Review</h2>
+        <p className="text-[#8aa4a9] mt-1">Share your thoughts about a book you've read</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="relative">
         {error && (
-          <div className="bg-[#fef2f2] border border-[#fecaca] text-[#dc2626] px-4 py-3 rounded-md">
+          <div className="bg-[#fef2f2] border border-[#fecaca] text-[#dc2626] m-6 px-4 py-3 rounded-md">
             {error}
           </div>
         )}
 
-        {/* Book Search */}
-        <div>
-          <label htmlFor="search" className="block text-sm font-medium text-[#365f60] mb-1">
-            Search for a book
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              id="search"
-              value={searchQuery}
-              onChange={(e) => handleSearchInput(e.target.value)}
-              placeholder="Search for a book..."
-              className="input-field pr-10"
-            />
-            <button
-              type="button"
-              onClick={handleOpenScanner}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-[#365f60] hover:text-[#8aa4a9] transition-colors"
-              title="Scan ISBN barcode"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                <rect x="4" y="4" width="16" height="16" rx="2" strokeWidth={2} />
-              </svg>
-            </button>
-          </div>
-          
-          {searchResults.length > 0 && !selectedBook && (
-            <div className="mt-2 border border-[#adbfc7] rounded-md max-h-96 overflow-y-auto">
-              {searching ? (
-                <div className="p-4 text-center text-[#8aa4a9]">
-                  Searching...
-                </div>
-              ) : (
-                searchResults.map((book) => (
-                  <button
-                    key={book.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedBook(book);
-                      setSearchQuery('');
-                      setSearchResults([]);
-                    }}
-                    className="w-full text-left p-4 hover:bg-[#dfe7ec] focus:bg-[#dfe7ec] flex gap-4 items-start border-b border-[#adbfc7] last:border-b-0"
-                  >
-                    {book.coverUrl && (
-                      <img
-                        src={book.coverUrl}
-                        alt={book.title}
-                        className="w-16 h-auto rounded shadow-sm"
-                      />
-                    )}
-                    <div>
-                      <div className="font-medium text-[#365f60]">{book.title}</div>
-                      <div className="text-sm text-[#8aa4a9]">by {book.author} ({book.releaseYear})</div>
-                      {book.publisher && (
-                        <div className="text-sm text-[#8aa4a9]">Publisher: {book.publisher}</div>
-                      )}
-                      {book.numberOfPages && (
-                        <div className="text-sm text-[#8aa4a9]">{book.numberOfPages} pages</div>
-                      )}
-                      {book.isbn && (
-                        <div className="text-sm text-[#8aa4a9]">ISBN: {book.isbn}</div>
-                      )}
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
-          )}
+        {/* Book Search Section */}
+        <div className="p-6">
+          <BookSearch 
+            onBookSelected={handleBookSelected}
+            selectedBook={selectedBook as SearchBook}
+            enableBarcode={true}
+            minSearchLength={2}
+            autoSearchLength={5}
+            placeholder="Search by title, author, or ISBN"
+            label="Search for a book to review"
+          />
+        </div>
 
-          {selectedBook && (
-            <div className="mt-2 p-4 border border-[#adbfc7] rounded-md bg-[#dfe7ec]">
-              <div className="flex gap-4">
-                {selectedBook.coverUrl && (
-                  <img
-                    src={selectedBook.coverUrl}
-                    alt={selectedBook.title}
-                    className="w-32 h-auto rounded shadow-md"
-                  />
-                )}
+        {/* Selected Book with Enhanced Styling */}
+        {selectedBook && (
+          <div className="overflow-hidden transition-all duration-300 ease-in-out">
+            <div className="relative bg-gradient-to-b from-[#365f60] to-[#63b4b7] text-white p-6 pb-8">
+              <div className="absolute inset-0 opacity-20 bg-pattern" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%239C92AC" fill-opacity="0.2" fill-rule="evenodd"%3E%3Ccircle cx="3" cy="3" r="3"/%3E%3Ccircle cx="13" cy="13" r="3"/%3E%3C/g%3E%3C/svg%3E")' }}></div>
+              
+              <div className="flex items-start gap-6 relative z-10">
+                <div className="flex-shrink-0">
+                  <div className="w-28 h-40 rounded-md shadow-md overflow-hidden border-4 border-white transition-transform duration-300 transform hover:scale-105 hover:shadow-lg">
+                    {selectedBook.coverUrl ? (
+                      <img 
+                        src={selectedBook.coverUrl} 
+                        alt={`Cover of ${selectedBook.title}`}
+                        className="w-full h-full object-cover" 
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-[#d1dfe2]">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-[#8aa4a9]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
                 <div className="flex-1">
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="font-medium text-[#365f60] text-lg">{selectedBook.title}</div>
-                      <div className="text-[#8aa4a9]">by {selectedBook.author} ({selectedBook.releaseYear})</div>
-                      {selectedBook.publisher && (
-                        <div className="text-sm text-[#8aa4a9] mt-1">Publisher: {selectedBook.publisher}</div>
-                      )}
-                      {selectedBook.numberOfPages && (
-                        <div className="text-sm text-[#8aa4a9]">{selectedBook.numberOfPages} pages</div>
-                      )}
-                      {selectedBook.isbn && (
-                        <div className="text-sm text-[#8aa4a9]">ISBN: {selectedBook.isbn}</div>
-                      )}
-                      {selectedBook.description && (
-                        <div className="text-sm text-[#746a64] mt-2 line-clamp-3">{selectedBook.description}</div>
-                      )}
+                      <h3 className="text-2xl font-bold mb-1">{selectedBook.title}</h3>
+                      <p className="text-white/90 text-lg">by {selectedBook.author}</p>
+                      
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {selectedBook.releaseYear && (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            {selectedBook.releaseYear}
+                          </span>
+                        )}
+                        
+                        {selectedBook.isbn && (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            ISBN: {selectedBook.isbn}
+                          </span>
+                        )}
+                        
+                        {selectedBook.numberOfPages && (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            {selectedBook.numberOfPages} pages
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => setSelectedBook(null)}
-                      className="text-[#8aa4a9] hover:text-[#365f60] ml-4"
+                      className="text-white/80 hover:text-white transition-colors px-2 py-1 rounded-md hover:bg-white/10"
                     >
-                      Change
+                      Change Book
                     </button>
+                  </div>
+                  
+                  {selectedBook.description && (
+                    <div className="mt-4 bg-white/10 backdrop-blur-sm rounded-md p-3 max-h-24 overflow-y-auto text-sm">
+                      <p className="line-clamp-3">{selectedBook.description}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Review Form Fields */}
+            <div className="p-6 border-t border-[#e0e7e9] bg-[#f8fafa] rounded-b-lg">
+              <h4 className="text-lg font-semibold text-[#365f60] mb-4">Your Review</h4>
+              
+              {/* Rating */}
+              <div className="mb-6">
+                <label className="text-sm font-medium text-[#365f60] mb-2 block">Your Rating</label>
+                <div className="flex space-x-2 mb-2">
+                  {renderRatingStars(formData.rating)}
+                </div>
+                <div className="text-sm text-[#8aa4a9]">
+                  {getRatingText(formData.rating)}
+                </div>
+              </div>
+              
+              {/* Review Text */}
+              <div className="mb-6">
+                <label htmlFor="review" className="text-sm font-medium text-[#365f60] mb-1 block">
+                  Your Review
+                </label>
+                <textarea
+                  id="review"
+                  rows={4}
+                  value={formData.text}
+                  onChange={(e) => setFormData({ ...formData, text: e.target.value })}
+                  placeholder="What did you think about this book? Write your detailed review here..."
+                  className="w-full p-3 border border-[#d1dfe2] rounded-md text-sm focus:ring-2 focus:ring-[#365f60] focus:border-transparent transition-colors"
+                  required
+                />
+              </div>
+              
+              {/* Reading Dates */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="startDate" className="text-sm font-medium text-[#365f60] mb-1 block">
+                    Start Reading Date
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#8aa4a9]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <input
+                      type="date"
+                      id="startDate"
+                      value={formData.startDate}
+                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                      className="w-full py-2 pl-10 pr-3 border border-[#d1dfe2] rounded-md focus:ring-2 focus:ring-[#365f60] focus:border-transparent transition-colors"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label htmlFor="endDate" className="text-sm font-medium text-[#365f60] mb-1 block">
+                    Finish Reading Date
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#8aa4a9]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <input
+                      type="date"
+                      id="endDate"
+                      value={formData.endDate}
+                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                      className="w-full py-2 pl-10 pr-3 border border-[#d1dfe2] rounded-md focus:ring-2 focus:ring-[#365f60] focus:border-transparent transition-colors"
+                      required
+                    />
                   </div>
                 </div>
               </div>
             </div>
-          )}
-        </div>
-        
-        <div>
-          <label htmlFor="rating" className="block text-sm font-medium text-[#365f60] mb-1">
-            Rating
-          </label>
-          <select
-            id="rating"
-            value={formData.rating}
-            onChange={(e) => setFormData({ ...formData, rating: parseInt(e.target.value) })}
-            className="input-field"
-          >
-            <option value="5">⭐⭐⭐⭐⭐ (5 stars)</option>
-            <option value="4">⭐⭐⭐⭐ (4 stars)</option>
-            <option value="3">⭐⭐⭐ (3 stars)</option>
-            <option value="2">⭐⭐ (2 stars)</option>
-            <option value="1">⭐ (1 star)</option>
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="review" className="block text-sm font-medium text-[#365f60] mb-1">
-            Review
-          </label>
-          <textarea
-            id="review"
-            rows={4}
-            value={formData.text}
-            onChange={(e) => setFormData({ ...formData, text: e.target.value })}
-            placeholder="Write your review here..."
-            className="input-field"
-            required
-          />
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="startDate" className="block text-sm font-medium text-[#365f60] mb-1">
-              Start Date
-            </label>
-            <input
-              type="date"
-              id="startDate"
-              value={formData.startDate}
-              onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-              className="input-field"
-              required
-            />
           </div>
+        )}
 
-          <div>
-            <label htmlFor="endDate" className="block text-sm font-medium text-[#365f60] mb-1">
-              End Date
-            </label>
-            <input
-              type="date"
-              id="endDate"
-              value={formData.endDate}
-              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-              className="input-field"
-              required
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end space-x-4">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="btn-secondary"
-            disabled={loading}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="btn-primary"
-            disabled={loading || !selectedBook}
-          >
-            {loading ? 'Submitting...' : 'Submit Review'}
-          </button>
-        </div>
-      </form>
-
-      {/* Barcode Scanner */}
-      {showScanner && (
-        <div className="mt-4 relative">
-          <div className="absolute top-2 right-2 z-10">
+        {/* Footer with action buttons */}
+        <div className="p-6 border-t border-[#e0e7e9] bg-[#f8fafa]">
+          <div className="flex justify-end space-x-4">
             <button
               type="button"
-              onClick={() => setShowScanner(false)}
-              className="bg-white rounded-full p-1 shadow-md text-[#365f60] hover:text-[#8aa4a9]"
+              onClick={onCancel}
+              className="btn-secondary"
+              disabled={loading}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn-primary"
+              disabled={loading || !selectedBook}
+            >
+              {loading ? (
+                <div className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Submitting...
+                </div>
+              ) : (
+                <div className="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Submit Review
+                </div>
+              )}
             </button>
           </div>
-          <div className="rounded-lg overflow-hidden border-2 border-[#365f60] relative">
-            {cameraError ? (
-              <div className="w-full h-64 flex items-center justify-center bg-gray-100 text-red-500 p-4 text-center">
-                <div>
-                  <p className="font-medium mb-2">Camera access error</p>
-                  <p className="text-sm">{cameraError}</p>
-                  <p className="text-sm mt-2">
-                    Please make sure you've granted camera permissions and are using a secure connection (HTTPS).
-                    <br />
-                    If using Chrome, check the camera icon in the address bar to manage permissions.
-                  </p>
-                  <div className="mt-3 flex justify-center space-x-3">
-                    <button 
-                      onClick={() => {
-                        setCameraError(null);
-                        // First close the scanner to release resources
-                        setShowScanner(false);
-                        // Use setTimeout to ensure state updates before reopening
-                        setTimeout(() => handleOpenScanner(), 100);
-                      }}
-                      className="px-4 py-2 bg-[#365f60] text-white rounded-md hover:bg-[#2a4a4b] transition-colors"
-                    >
-                      Try Again
-                    </button>
-                    <button 
-                      onClick={() => setShowScanner(false)}
-                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <>
-                <video ref={ref as React.LegacyRef<HTMLVideoElement>} className="w-full h-64 object-cover" autoPlay playsInline muted />
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-3/4 h-1/2 border-2 border-[#365f60] opacity-70"></div>
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 bg-[#365f60] bg-opacity-70 text-white text-center py-2">
-                  Position the ISBN barcode within the frame
-                </div>
-              </>
-            )}
-          </div>
-          <div className="mt-2 text-sm text-[#8aa4a9] text-center">
-            Make sure you have good lighting and hold the camera steady
-          </div>
         </div>
-      )}
+      </form>
     </div>
   );
 } 
