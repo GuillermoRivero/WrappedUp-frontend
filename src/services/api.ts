@@ -139,11 +139,21 @@ export const wishlist = {
     priority?: number;
     isPublic?: boolean;
   }) {
+    // Asegurar que el openLibraryKey tenga el formato correcto (con prefijo '/works/' si no lo tiene)
+    if (data.openLibraryKey && !data.openLibraryKey.startsWith('/works/') && !data.openLibraryKey.startsWith('OL')) {
+      data.openLibraryKey = '/works/' + data.openLibraryKey;
+    }
+    
+    console.log('API: Sending wishlist request with data:', data);
+    
     try {
       const response = await api.post('/api/wishlist', data);
-      return response.data;
-    } catch (error) {
-      console.error('Error adding to wishlist:', error);
+      console.log('API: Wishlist response:', response);
+      return response;
+    } catch (error: any) {
+      console.error('API: Error adding to wishlist:', error);
+      console.error('API: Error details:', error.response?.data);
+      console.error('API: Error status:', error.response?.status);
       throw error;
     }
   },
