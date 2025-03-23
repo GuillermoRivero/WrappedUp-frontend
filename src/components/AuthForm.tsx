@@ -30,7 +30,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
         await login(formData.email, formData.password);
       } else {
         if (formData.name) {
-          await register(formData.name, formData.email, formData.password);
+          await register(formData.email, formData.password);
         }
       }
       
