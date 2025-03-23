@@ -53,6 +53,12 @@ export default function Navigation() {
                 >
                   Wraps
                 </Link>
+                <Link 
+                  href="/wishlist" 
+                  className={`px-3 py-2 rounded-md text-sm font-medium ${isActive('/wishlist') ? 'bg-[#2a4a4b] text-white' : 'hover:bg-[#2a4a4b] hover:text-white'}`}
+                >
+                  Wishlist
+                </Link>
                 <button 
                   onClick={handleLogout}
                   className="px-3 py-2 rounded-md text-sm font-medium hover:bg-[#2a4a4b] hover:text-white flex items-center"
@@ -122,6 +128,13 @@ export default function Navigation() {
                   onClick={closeMenu}
                 >
                   Wraps
+                </Link>
+                <Link 
+                  href="/wishlist" 
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${isActive('/wishlist') ? 'bg-[#2a4a4b] text-white' : 'hover:bg-[#2a4a4b] hover:text-white'}`}
+                  onClick={closeMenu}
+                >
+                  Wishlist
                 </Link>
                 <button 
                   onClick={handleLogout}

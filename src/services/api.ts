@@ -59,8 +59,8 @@ export const auth = {
       // Configurar headers para futuras peticiones
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
-      // Usar email como username temporalmente
-      return { ...userData, username: userData.email };
+      // Return the user data with the proper username
+      return userData;
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -78,8 +78,8 @@ export const auth = {
       // Configurar headers para futuras peticiones
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
-      // Usar email como username temporalmente
-      return { ...userData, username: userData.email };
+      // Return the user data with the proper username
+      return userData;
     } catch (error) {
       console.error('Register error:', error);
       throw error;
@@ -102,8 +102,8 @@ export const auth = {
         api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
       }
       
-      // Usar email como username temporalmente
-      return { ...userData, username: userData.email };
+      // Return the user data with the proper username 
+      return userData;
     } catch (error) {
       if ((error as AxiosError).response?.status === 401) {
         localStorage.removeItem('token');
@@ -116,6 +116,156 @@ export const auth = {
     localStorage.removeItem('token');
     delete api.defaults.headers.common['Authorization'];
   },
+};
+
+// Wishlist methods
+export const wishlist = {
+  // Get current user's wishlist
+  async getUserWishlist() {
+    try {
+      const response = await api.get('/api/wishlist');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching wishlist:', error);
+      throw error;
+    }
+  },
+  
+  // Add a book to the wishlist
+  async addToWishlist(data: {
+    bookId?: string;
+    openLibraryKey?: string;
+    description?: string;
+    priority?: number;
+    isPublic?: boolean;
+  }) {
+    try {
+      const response = await api.post('/api/wishlist', data);
+      return response.data;
+    } catch (error) {
+      console.error('Error adding to wishlist:', error);
+      throw error;
+    }
+  },
+  
+  // Update a wishlist item
+  async updateWishlistItem(id: string, data: {
+    description?: string;
+    priority?: number;
+    isPublic?: boolean;
+  }) {
+    try {
+      const response = await api.put(`/api/wishlist/${id}`, data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating wishlist item:', error);
+      throw error;
+    }
+  },
+  
+  // Remove an item from the wishlist
+  async removeFromWishlist(id: string) {
+    try {
+      await api.delete(`/api/wishlist/${id}`);
+    } catch (error) {
+      console.error('Error removing from wishlist:', error);
+      throw error;
+    }
+  },
+  
+  // Get a user's public wishlist
+  async getPublicWishlist(username: string) {
+    try {
+      // Create a new instance without authentication for public endpoints
+      const publicApi = axios.create({
+        baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        withCredentials: false // Don't send cookies
+      });
+      
+      console.log(`Fetching public wishlist for username: ${username}`);
+      const response = await publicApi.get(`/api/wishlist/public/user/${username}`);
+      console.log('Public wishlist response:', response);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching public wishlist:', error);
+      throw error;
+    }
+  }
+};
+
+// Book methods
+export const books = {
+  // Search for books
+  async searchBooks(query: string, signal?: AbortSignal) {
+    try {
+      // Check for token
+      const token = localStorage.getItem('token');
+      
+      if (token) {
+        // Use authenticated API if token exists
+        const response = await api.get(`/api/books/search?query=${encodeURIComponent(query)}`, { signal });
+        return response.data;
+      } else {
+        // Fallback to public API if no token
+        const publicApi = axios.create({
+          baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          withCredentials: false // Don't send cookies
+        });
+        
+        const response = await publicApi.get(`/api/books/search?query=${encodeURIComponent(query)}`, { signal });
+        return response.data;
+      }
+    } catch (error) {
+      console.error('Error searching books:', error);
+      throw error;
+    }
+  },
+  
+  // Get a book by OpenLibrary key
+  async getBookByOpenLibraryKey(key: string) {
+    try {
+      // Create a new instance without authentication for public endpoints
+      const publicApi = axios.create({
+        baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        withCredentials: false // Don't send cookies
+      });
+      
+      const response = await publicApi.get(`/api/books/openlibrary/${key}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching book by OpenLibrary key:', error);
+      throw error;
+    }
+  },
+  
+  // Get a book by ID
+  async getBookById(id: string) {
+    try {
+      // Create a new instance without authentication for public endpoints
+      const publicApi = axios.create({
+        baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        withCredentials: false // Don't send cookies
+      });
+      
+      const response = await publicApi.get(`/api/books/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching book by ID:', error);
+      throw error;
+    }
+  }
 };
 
 export default api; 

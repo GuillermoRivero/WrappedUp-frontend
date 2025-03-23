@@ -50,9 +50,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isLoading) {
       const isAuthRoute = pathname === '/login' || pathname === '/register';
+      const isPublicWishlist = pathname.startsWith('/wishlist/') && pathname !== '/wishlist';
       const token = localStorage.getItem('token');
 
-      if (!token && !isAuthRoute && pathname !== '/') {
+      if (!token && !isAuthRoute && pathname !== '/' && !isPublicWishlist) {
         router.push('/login');
       } else if (token && user && isAuthRoute) {
         router.push('/wraps');
