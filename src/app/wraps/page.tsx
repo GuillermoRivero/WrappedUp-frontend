@@ -6,8 +6,8 @@ import api from '@/services/api';
 import ReadingTimeline from '@/components/ReadingTimeline';
 import dynamic from 'next/dynamic';
 
-// Dynamically import ReactWordcloud with no SSR to avoid hydration issues
-const ReactWordcloud = dynamic(() => import('react-wordcloud'), { ssr: false });
+// Dynamically import WordCloud with no SSR to avoid hydration issues
+const WordCloud = dynamic(() => import('@isoterik/react-word-cloud').then(mod => mod.WordCloud), { ssr: false });
 
 // Function to get a color based on rating
 const getRatingColor = (rating: number): string => {
@@ -422,18 +422,33 @@ export default function ReadingWraps() {
   // Word cloud options
   const wordCloudOptions = {
     colors: ['#365f60', '#4d797e', '#6b8e92', '#8aa4a9', '#adbfc7'],
-    enableTooltip: true,
-    deterministic: true,
     fontFamily: 'Inter, sans-serif',
-    fontSizes: [20, 60] as [number, number],
-    fontStyle: 'normal',
+    fontSizes: [20, 60],
     fontWeight: 'normal',
-    padding: 1,
     rotations: 0,
-    rotationAngles: [0, 0] as [number, number],
-    scale: 'sqrt' as const,
-    spiral: 'archimedean' as const,
+    rotationAngles: [0, 0],
     transitionDuration: 500,
+    enableTooltip: true,
+    deterministic: true
+  };
+
+  // Format wordcloud props to match @isoterik/react-word-cloud API
+  const getWordCloudProps = (words: { text: string; value: number }[]) => {
+    return {
+      words,
+      width: 400,
+      height: 250,
+      font: 'Inter, sans-serif',
+      fontWeight: 'normal' as const,
+      fontSize: (word: { text: string; value: number }) => 
+        Math.max(20, Math.min(60, 20 + word.value * 5)),
+      rotate: () => 0,
+      fill: (_: any, i: number) => wordCloudOptions.colors[i % wordCloudOptions.colors.length],
+      padding: 2,
+      enableTooltip: true,
+      transition: '0.5s ease',
+      spiral: 'archimedean' as const,
+    };
   };
 
   return (
@@ -636,7 +651,7 @@ export default function ReadingWraps() {
             </div>
           ) : (
             <div className="h-64">
-              <ReactWordcloud words={topSubjects} options={wordCloudOptions} />
+              <WordCloud {...getWordCloudProps(topSubjects)} />
             </div>
           )}
         </div>
@@ -664,7 +679,7 @@ export default function ReadingWraps() {
             </div>
           ) : (
             <div className="h-64">
-              <ReactWordcloud words={topAuthors} options={wordCloudOptions} />
+              <WordCloud {...getWordCloudProps(topAuthors)} />
             </div>
           )}
         </div>
