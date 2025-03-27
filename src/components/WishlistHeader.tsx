@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { userProfile } from '@/services/api';
 
 interface WishlistHeaderProps {
   username: string;
@@ -24,6 +25,24 @@ export default function WishlistHeader({
 }: WishlistHeaderProps) {
   const [copySuccess, setCopySuccess] = useState('');
   const shareUrlRef = useRef<HTMLInputElement>(null);
+  const [profileImage, setProfileImage] = useState<string>('');
+
+  // Fetch profile image for public wishlist
+  useEffect(() => {
+    if (!isPersonal) {
+      const fetchUserProfile = async () => {
+        try {
+          const profile = await userProfile.getPublicProfile(username);
+          if (profile && profile.userImageUrl) {
+            setProfileImage(profile.userImageUrl);
+          }
+        } catch (error) {
+          console.error('Failed to fetch user profile:', error);
+        }
+      };
+      fetchUserProfile();
+    }
+  }, [isPersonal, username]);
 
   // Get the public share URL for this wishlist
   const getShareUrl = (): string => {
@@ -71,13 +90,41 @@ export default function WishlistHeader({
     </button>
   );
 
+  // Get user's initial for fallback avatar
+  const getUserInitial = (): string => {
+    return username.charAt(0).toUpperCase();
+  };
+
   return (
     <>
       {/* Header with user info */}
       <div className="flex items-center mb-6">
-        <div className="flex-shrink-0 bg-[#365f60] text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mr-4">
-          {username.charAt(0).toUpperCase()}
-        </div>
+        {/* Only show avatar for public wishlist */}
+        {!isPersonal && (
+          <div className="flex-shrink-0 mr-4">
+            {profileImage ? (
+              <div className="w-12 h-12 rounded-full overflow-hidden">
+                <img 
+                  src={profileImage} 
+                  alt={`${username}'s profile`}
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    const img = e.target as HTMLImageElement;
+                    img.style.display = 'none';
+                    if (img.parentElement) {
+                      img.parentElement.classList.add('bg-[#365f60]', 'text-white', 'flex', 'items-center', 'justify-center', 'text-xl', 'font-bold');
+                      img.parentElement.textContent = getUserInitial();
+                    }
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="bg-[#365f60] text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold">
+                {getUserInitial()}
+              </div>
+            )}
+          </div>
+        )}
         <div className="flex-grow">
           <h1 className="text-2xl font-bold text-[#365f60]">
             {isPersonal ? 'My Wishlist' : `${username}'s Wishlist`}

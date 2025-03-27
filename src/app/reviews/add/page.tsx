@@ -90,11 +90,11 @@ export default function AddReviewPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="relative flex flex-col">
-          {error && (
+        {error && (
             <div className="bg-[#fef2f2] border border-[#fecaca] text-[#dc2626] m-6 px-4 py-3 rounded-md">
-              {error}
-            </div>
-          )}
+            {error}
+          </div>
+        )}
 
           {/* Book Search Section */}
           <div className="p-6 relative z-20">
@@ -107,19 +107,19 @@ export default function AddReviewPage() {
               placeholder="Search by title, author, or ISBN"
               label="Search for a book to review"
             />
-          </div>
-
+            </div>
+            
           {/* Display prompt if no book is selected */}
           {!selectedBook && (
             <div className="text-center py-8 bg-gray-50 rounded-md border border-gray-200 mx-6 mb-6">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-[#8aa4a9] mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-              </svg>
+                    </svg>
               <p className="text-[#365f60] font-medium">Please search and select a book to review</p>
               <p className="text-[#8aa4a9] text-sm mt-1">The review form will appear once you've selected a book</p>
-            </div>
-          )}
-
+              </div>
+            )}
+            
           {/* Selected Book and Review Form */}
           {selectedBook && (
             <div className="transition-all duration-300 ease-in-out relative z-10">
@@ -148,17 +148,17 @@ export default function AddReviewPage() {
                           </div>
                         )}
                       </div>
-                    </div>
+              </div>
 
                     {/* Book details */}
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <div>
                           <h3 className="text-2xl font-bold mb-1">{selectedBook.title}</h3>
                           <p className="text-white/90 text-lg">by {selectedBook.author} {selectedBook.releaseYear && `(${selectedBook.releaseYear})`}</p>
                           
                           <div className="flex flex-wrap gap-2 mt-3">
-                            {selectedBook.numberOfPages && (
+                        {selectedBook.numberOfPages && (
                               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -167,7 +167,7 @@ export default function AddReviewPage() {
                               </span>
                             )}
                             
-                            {selectedBook.isbn && (
+                        {selectedBook.isbn && (
                               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
@@ -185,14 +185,14 @@ export default function AddReviewPage() {
                               </span>
                             )}
                           </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedBook(null)}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedBook(null)}
                           className="text-white/80 hover:text-white transition-colors px-3 py-1 rounded-md hover:bg-white/10 border border-white/20"
-                        >
+                      >
                           Change Book
-                        </button>
+                      </button>
                       </div>
                     </div>
                   </div>
@@ -215,9 +215,9 @@ export default function AddReviewPage() {
                 </h4>
                 
                 <div className="mb-6 relative z-10">
-                  <label htmlFor="rating" className="block text-sm font-medium text-[#365f60] mb-1">
-                    Rating
-                  </label>
+                <label htmlFor="rating" className="block text-sm font-medium text-[#365f60] mb-1">
+                  Rating
+                </label>
                   <select
                     id="rating"
                     value={formData.rating}
@@ -246,62 +246,62 @@ export default function AddReviewPage() {
                     required
                   />
                   <div className="text-xs text-[#8aa4a9] mt-1 text-right">{formData.text.length}/2000</div>
-                </div>
+              </div>
 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 relative z-10">
                   <div className="mb-4">
-                    <label htmlFor="startDate" className="block text-sm font-medium text-[#365f60] mb-1">
+                  <label htmlFor="startDate" className="block text-sm font-medium text-[#365f60] mb-1">
                       <span className="flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        Start Date
+                    Start Date
                       </span>
-                    </label>
-                    <input
-                      type="date"
-                      id="startDate"
-                      value={formData.startDate}
+                  </label>
+                  <input
+                    type="date"
+                    id="startDate"
+                    value={formData.startDate}
                       onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                       className="w-full p-3 border border-[#d1dfe2] rounded-md shadow-sm focus:ring-2 focus:ring-[#365f60] focus:border-transparent transition-colors z-10"
-                      required
-                    />
-                  </div>
+                    required
+                  />
+                </div>
 
                   <div className="mb-4">
-                    <label htmlFor="endDate" className="block text-sm font-medium text-[#365f60] mb-1">
+                  <label htmlFor="endDate" className="block text-sm font-medium text-[#365f60] mb-1">
                       <span className="flex items-center">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        End Date
+                    End Date
                       </span>
-                    </label>
-                    <input
-                      type="date"
-                      id="endDate"
-                      value={formData.endDate}
+                  </label>
+                  <input
+                    type="date"
+                    id="endDate"
+                    value={formData.endDate}
                       onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                       className="w-full p-3 border border-[#d1dfe2] rounded-md shadow-sm focus:ring-2 focus:ring-[#365f60] focus:border-transparent transition-colors z-10"
-                      required
-                    />
+                    required
+                  />
                   </div>
                 </div>
               </div>
-              
+
               {/* Footer with action buttons */}
               <div className="p-6 border-t border-[#e0e7e9] bg-[#f8fafa] relative z-10">
-                <div className="flex justify-end space-x-4">
-                  <button
-                    type="button"
-                    onClick={() => router.push('/reviews')}
+          <div className="flex justify-end space-x-4">
+            <button
+              type="button"
+              onClick={() => router.push('/reviews')}
                     className="px-4 py-2 border border-[#d1dfe2] rounded-md text-[#365f60] hover:bg-[#f1f5f5] transition-colors relative z-10"
                     disabled={loading}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
                     className="px-4 py-2 bg-[#365f60] border border-[#365f60] rounded-md text-white hover:bg-[#2b4c4d] transition-colors relative z-10 flex items-center"
                     disabled={loading}
                   >
@@ -336,8 +336,8 @@ export default function AddReviewPage() {
                 className="px-4 py-2 border border-[#d1dfe2] rounded-md text-[#365f60] hover:bg-[#f1f5f5] transition-colors relative z-10"
               >
                 Cancel
-              </button>
-            </div>
+            </button>
+          </div>
           )}
         </form>
       </div>

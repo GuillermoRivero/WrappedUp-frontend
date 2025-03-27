@@ -153,8 +153,8 @@ export default function ReviewForm({ onSubmit, onCancel }: ReviewFormProps) {
             placeholder="Search by title, author, or ISBN"
             label="Search for a book to review"
           />
-        </div>
-
+          </div>
+          
         {/* Selected Book with Enhanced Styling */}
         {selectedBook && (
           <div className="overflow-hidden transition-all duration-300 ease-in-out">
@@ -176,9 +176,9 @@ export default function ReviewForm({ onSubmit, onCancel }: ReviewFormProps) {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                         </svg>
                       </div>
-                    )}
-                  </div>
-                </div>
+                      )}
+                    </div>
+            </div>
                 
                 <div className="flex-1">
                   <div className="flex justify-between items-start">
@@ -196,7 +196,7 @@ export default function ReviewForm({ onSubmit, onCancel }: ReviewFormProps) {
                           </span>
                         )}
                         
-                        {selectedBook.isbn && (
+                      {selectedBook.isbn && (
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -245,68 +245,68 @@ export default function ReviewForm({ onSubmit, onCancel }: ReviewFormProps) {
                 </div>
                 <div className="text-sm text-[#8aa4a9]">
                   {getRatingText(formData.rating)}
-                </div>
-              </div>
-              
+        </div>
+        </div>
+
               {/* Review Text */}
               <div className="mb-6">
                 <label htmlFor="review" className="text-sm font-medium text-[#365f60] mb-1 block">
                   Your Review
-                </label>
-                <textarea
-                  id="review"
-                  rows={4}
-                  value={formData.text}
-                  onChange={(e) => setFormData({ ...formData, text: e.target.value })}
+          </label>
+          <textarea
+            id="review"
+            rows={4}
+            value={formData.text}
+            onChange={(e) => setFormData({ ...formData, text: e.target.value })}
                   placeholder="What did you think about this book? Write your detailed review here..."
                   className="w-full p-3 border border-[#d1dfe2] rounded-md text-sm focus:ring-2 focus:ring-[#365f60] focus:border-transparent transition-colors"
-                  required
-                />
-              </div>
-              
+            required
+          />
+        </div>
+
               {/* Reading Dates */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+          <div>
                   <label htmlFor="startDate" className="text-sm font-medium text-[#365f60] mb-1 block">
                     Start Reading Date
-                  </label>
+            </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#8aa4a9]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
-                    <input
-                      type="date"
-                      id="startDate"
-                      value={formData.startDate}
-                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+            <input
+              type="date"
+              id="startDate"
+              value={formData.startDate}
+              onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                       className="w-full py-2 pl-10 pr-3 border border-[#d1dfe2] rounded-md focus:ring-2 focus:ring-[#365f60] focus:border-transparent transition-colors"
-                      required
-                    />
+              required
+            />
                   </div>
-                </div>
-                
-                <div>
+          </div>
+
+          <div>
                   <label htmlFor="endDate" className="text-sm font-medium text-[#365f60] mb-1 block">
                     Finish Reading Date
-                  </label>
+            </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#8aa4a9]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
-                    <input
-                      type="date"
-                      id="endDate"
-                      value={formData.endDate}
-                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+            <input
+              type="date"
+              id="endDate"
+              value={formData.endDate}
+              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                       className="w-full py-2 pl-10 pr-3 border border-[#d1dfe2] rounded-md focus:ring-2 focus:ring-[#365f60] focus:border-transparent transition-colors"
-                      required
-                    />
-                  </div>
-                </div>
+              required
+            />
+          </div>
+        </div>
               </div>
             </div>
           </div>
@@ -314,36 +314,36 @@ export default function ReviewForm({ onSubmit, onCancel }: ReviewFormProps) {
 
         {/* Footer with action buttons */}
         <div className="p-6 border-t border-[#e0e7e9] bg-[#f8fafa]">
-          <div className="flex justify-end space-x-4">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="btn-secondary"
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={loading || !selectedBook}
-            >
+        <div className="flex justify-end space-x-4">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="btn-secondary"
+            disabled={loading}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="btn-primary"
+            disabled={loading || !selectedBook}
+          >
               {loading ? (
                 <div className="flex items-center">
                   <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+              </svg>
                   Submitting...
-                </div>
-              ) : (
+              </div>
+            ) : (
                 <div className="flex items-center">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   Submit Review
                 </div>
-              )}
+            )}
             </button>
           </div>
         </div>

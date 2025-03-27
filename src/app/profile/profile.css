@@ -1,0 +1,167 @@
+/* Toggle Switch Styles */
+.toggle-checkbox {
+  transition: all 0.3s;
+  z-index: 1;
+}
+
+.toggle-checkbox:checked {
+  transform: translateX(100%);
+  border-color: #fff;
+}
+
+.toggle-label {
+  transition: background-color 0.3s ease;
+}
+
+/* Form styling */
+.form-card {
+  transition: box-shadow 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.form-card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Section styling */
+.section-heading {
+  position: relative;
+  display: inline-block;
+}
+
+.section-heading::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background-color: #365f60;
+}
+
+/* Input focus styles */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #365f60;
+  box-shadow: 0 0 0 2px rgba(54, 95, 96, 0.2);
+}
+
+/* Social links input styling */
+.social-input {
+  transition: all 0.2s ease;
+}
+
+.social-input:focus {
+  border-color: #365f60;
+}
+
+/* Button styling */
+.btn-primary {
+  background-color: #365f60;
+  border-color: #365f60;
+  color: white;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background-color: #2a4a4b;
+  border-color: #2a4a4b;
+}
+
+.btn-primary:focus {
+  box-shadow: 0 0 0 2px rgba(54, 95, 96, 0.2);
+}
+
+/* Ensure consistent form input styling */
+input[type="text"], 
+input[type="number"], 
+textarea, 
+select {
+  transition: all 0.2s;
+}
+
+input[type="text"]:focus, 
+input[type="number"]:focus, 
+textarea:focus, 
+select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Range slider styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 5px;
+  background: #e2e8f0;
+  outline: none;
+}
+
+/* Chrome & Safari */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #365f60;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  background: #2a4a4b;
+  box-shadow: 0 0 0 3px rgba(54, 95, 96, 0.2);
+  transform: scale(1.1);
+}
+
+/* Firefox */
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #365f60;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  background: #2a4a4b;
+  box-shadow: 0 0 0 3px rgba(54, 95, 96, 0.2);
+  transform: scale(1.1);
+}
+
+/* Active state */
+input[type="range"]:active::-webkit-slider-thumb {
+  background: #2a4a4b;
+  transform: scale(1.1);
+}
+
+input[type="range"]:active::-moz-range-thumb {
+  background: #2a4a4b;
+  transform: scale(1.1);
+}
+
+/* Character counter styling */
+.char-counter {
+  font-size: 0.75rem;
+  color: #6b7280;
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  padding: 0.125rem 0.25rem;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 0.25rem;
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+textarea:focus + .char-counter {
+  color: #365f60;
+  background-color: rgba(255, 255, 255, 0.95);
+} 
