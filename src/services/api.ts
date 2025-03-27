@@ -8,6 +8,34 @@ interface AuthResponse {
   role: string;
 }
 
+interface UserProfileData {
+  username: string;
+  email: string;
+  fullName?: string;
+  bio?: string;
+  userImageUrl?: string;
+  favoriteGenres?: string[];
+  readingGoal?: number;
+  preferredLanguage?: string;
+  isPublicProfile: boolean;
+  socialLinks?: Record<string, string>;
+  location?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface UpdateUserProfileData {
+  fullName?: string;
+  bio?: string;
+  userImageUrl?: string;
+  favoriteGenres?: string[];
+  readingGoal?: number;
+  preferredLanguage?: string;
+  isPublicProfile?: boolean;
+  socialLinks?: Record<string, string>;
+  location?: string;
+}
+
 // Create axios instance with default config
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081',
@@ -116,6 +144,51 @@ export const auth = {
     localStorage.removeItem('token');
     delete api.defaults.headers.common['Authorization'];
   },
+};
+
+// User Profile methods
+export const userProfile = {
+  // Get current user's profile
+  async getUserProfile() {
+    try {
+      const response = await api.get<UserProfileData>('/api/profiles');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      throw error;
+    }
+  },
+  
+  // Update user profile
+  async updateProfile(profileData: UpdateUserProfileData) {
+    try {
+      const response = await api.put<UserProfileData>('/api/profiles', profileData);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
+  },
+  
+  // Get public profile by username
+  async getPublicProfile(username: string) {
+    try {
+      // Create a new instance without authentication for public endpoints
+      const publicApi = axios.create({
+        baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        withCredentials: false // Don't send cookies
+      });
+      
+      const response = await publicApi.get<UserProfileData>(`/api/profiles/public/${username}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching public profile:', error);
+      throw error;
+    }
+  }
 };
 
 // Wishlist methods
@@ -249,7 +322,7 @@ export const books = {
         withCredentials: false // Don't send cookies
       });
       
-      const response = await publicApi.get(`/api/books/openlibrary/${key}`);
+      const response = await publicApi.get(`/api/books/openlibrary/${encodeURIComponent(key)}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching book by OpenLibrary key:', error);
@@ -260,16 +333,7 @@ export const books = {
   // Get a book by ID
   async getBookById(id: string) {
     try {
-      // Create a new instance without authentication for public endpoints
-      const publicApi = axios.create({
-        baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        withCredentials: false // Don't send cookies
-      });
-      
-      const response = await publicApi.get(`/api/books/${id}`);
+      const response = await api.get(`/api/books/${id}`);
       return response.data;
     } catch (error) {
       console.error('Error fetching book by ID:', error);
