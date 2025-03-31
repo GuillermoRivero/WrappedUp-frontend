@@ -26,22 +26,40 @@ export default function WishlistHeader({
   const [copySuccess, setCopySuccess] = useState('');
   const shareUrlRef = useRef<HTMLInputElement>(null);
   const [profileImage, setProfileImage] = useState<string>('');
+  const [profileName, setProfileName] = useState<string>('');
 
-  // Fetch profile image for public wishlist
+  // Fetch profile info for both personal and public wishlist
   useEffect(() => {
-    if (!isPersonal) {
-      const fetchUserProfile = async () => {
-        try {
-          const profile = await userProfile.getPublicProfile(username);
-          if (profile && profile.userImageUrl) {
+    const fetchUserProfile = async () => {
+      try {
+        let profile;
+        if (isPersonal) {
+          profile = await userProfile.getUserProfile();
+        } else {
+          profile = await userProfile.getPublicProfile(username);
+        }
+        
+        if (profile) {
+          // Set profile image if available
+          if (profile.userImageUrl) {
             setProfileImage(profile.userImageUrl);
           }
-        } catch (error) {
-          console.error('Failed to fetch user profile:', error);
+          
+          // Set profile name if available, otherwise use username
+          if (profile.fullName) {
+            setProfileName(profile.fullName);
+          } else {
+            setProfileName(username);
+          }
         }
-      };
-      fetchUserProfile();
-    }
+      } catch (error) {
+        console.error('Failed to fetch user profile:', error);
+        // Fall back to username if profile fetch fails
+        setProfileName(username);
+      }
+    };
+    
+    fetchUserProfile();
   }, [isPersonal, username]);
 
   // Get the public share URL for this wishlist
@@ -92,7 +110,9 @@ export default function WishlistHeader({
 
   // Get user's initial for fallback avatar
   const getUserInitial = (): string => {
-    return username.charAt(0).toUpperCase();
+    // Use profile name if available, otherwise use username
+    const nameToUse = profileName || username;
+    return nameToUse.charAt(0).toUpperCase();
   };
 
   return (
@@ -106,7 +126,7 @@ export default function WishlistHeader({
               <div className="w-12 h-12 rounded-full overflow-hidden">
                 <img 
                   src={profileImage} 
-                  alt={`${username}'s profile`}
+                  alt={`${profileName || username}'s profile`}
                   className="h-full w-full object-cover"
                   onError={(e) => {
                     const img = e.target as HTMLImageElement;
@@ -127,12 +147,12 @@ export default function WishlistHeader({
         )}
         <div className="flex-grow">
           <h1 className="text-2xl font-bold text-[#365f60]">
-            {isPersonal ? 'My Wishlist' : `${username}'s Wishlist`}
+            {isPersonal ? 'My Wishlist' : `${profileName || username}'s Wishlist`}
           </h1>
           <p className="text-[#6b8e92]">
             {isPersonal
               ? 'Keep track of books you want to read'
-              : `Books that ${username} wants to read`}
+              : `Books that ${profileName || username} wants to read`}
           </p>
         </div>
         
