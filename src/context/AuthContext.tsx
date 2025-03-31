@@ -14,7 +14,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, username?: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -56,19 +56,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!token && !isAuthRoute && pathname !== '/' && !isPublicWishlist) {
         router.push('/login');
       } else if (token && user && isAuthRoute) {
-        router.push('/wraps');
+        router.push('/');
       }
     }
   }, [isLoading, user, pathname]);
 
   const login = async (email: string, password: string) => {
-    const userData = await auth.login(email, password);
-    setUser(userData);
+    try {
+      const userData = await auth.login(email, password);
+      setUser(userData);
+    } catch (error) {
+      // Let the error propagate up to AuthForm for handling
+      throw error;
+    }
   };
 
-  const register = async (email: string, password: string) => {
-    const userData = await auth.register(email, password);
-    setUser(userData);
+  const register = async (email: string, password: string, username?: string) => {
+    try {
+      const userData = await auth.register(email, password, username);
+      setUser(userData);
+    } catch (error) {
+      // Let the error propagate up to AuthForm for handling
+      throw error;
+    }
   };
 
   const logout = () => {
