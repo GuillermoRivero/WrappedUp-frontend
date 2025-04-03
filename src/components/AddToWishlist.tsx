@@ -43,7 +43,6 @@ export default function AddToWishlist({ onAddedToWishlist, onCancel }: AddToWish
     }
   };
 
-  // Convert search book to wishlist book format
   const handleBookSelected = (book: SearchBook) => {
     console.log("Book selected in AddToWishlist:", book);
     const wishlistBook: WishlistBook = {
