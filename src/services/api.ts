@@ -9,7 +9,7 @@ console.log('Environment Variables:', {
   NEXT_PUBLIC_APP_VERSION: process.env.NEXT_PUBLIC_APP_VERSION
 });
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL; // || 'https://wrappedupapi.duckdns.org';
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 console.log('Using API URL:', API_URL);
 
 interface AuthResponse {
