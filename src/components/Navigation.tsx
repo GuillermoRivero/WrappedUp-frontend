@@ -14,12 +14,19 @@ export default function Navigation() {
   const [profileImageUrl, setProfileImageUrl] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
+  // Log auth state on mount and when it changes
+  useEffect(() => {
+    console.log('Navigation - Auth state:', { isLoggedIn: !!user, userData: user });
+  }, [user]);
+
   // Fetch user profile image when user is available
   useEffect(() => {
     const fetchProfileImage = async () => {
       if (user) {
         try {
+          console.log('Fetching profile image for user:', user.username);
           const profileData = await userProfile.getUserProfile();
+          console.log('Profile data received:', profileData);
           setProfileImageUrl(profileData.userImageUrl || '');
         } catch (error) {
           console.error('Failed to fetch profile image:', error);
@@ -27,7 +34,12 @@ export default function Navigation() {
       }
     };
     
-    fetchProfileImage();
+    if (user) {
+      fetchProfileImage();
+    } else {
+      // Clear profile image if user is not logged in
+      setProfileImageUrl('');
+    }
   }, [user]);
 
   const toggleMenu = () => {
@@ -39,9 +51,13 @@ export default function Navigation() {
   };
 
   const handleLogout = () => {
+    console.log('Logout requested. Current user:', user);
     logout();
+    console.log('User after logout:', useAuth().user); // This might not reflect the change immediately
     closeMenu();
     setDropdownOpen(false);
+    // Force navigation to login page after logout
+    router.push('/login');
   };
 
   const isActive = (path: string) => {

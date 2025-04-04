@@ -3,7 +3,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/services/api';
+import Link from 'next/link';
 import ReadingTimeline from '@/components/ReadingTimeline';
+import { formatDate, normalizeReviewDates, isValidDate } from '@/utils/dateUtils';
 import dynamic from 'next/dynamic';
 
 // Dynamically import WordCloud with no SSR to avoid hydration issues
@@ -21,10 +23,9 @@ const getRatingColor = (rating: number): string => {
   }
 };
 
-// Function to format date for display
+// Replace the formatDateShort function with our utility
 const formatDateShort = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return formatDate(dateString, 'short');
 };
 
 interface Review {
@@ -77,27 +78,10 @@ export default function ReadingWraps() {
         console.log('API Response status:', response.status);
         console.log('API Response data:', response.data);
         
-        if (Array.isArray(response.data)) {
-          console.log('Response data is an array with length:', response.data.length);
-          setReviews(response.data);
-        } else if (response.data && typeof response.data === 'object') {
-          // Check if the data might be nested in a property
-          console.log('Response data is an object with keys:', Object.keys(response.data));
-          
-          // Try to find an array in the response
-          const possibleArrays = Object.values(response.data).filter(val => Array.isArray(val));
-          if (possibleArrays.length > 0) {
-            console.log('Found array in response with length:', possibleArrays[0].length);
-            setReviews(possibleArrays[0]);
-          } else {
-            console.log('No array found in response, setting empty reviews array');
-            setReviews([]);
-          }
-        } else {
-          console.log('Response data is not an array or object:', typeof response.data);
-          setReviews([]);
-        }
+        // Normalize the date fields in the response
+        const normalizedReviews = response.data.map((review: any) => normalizeReviewDates(review));
         
+        setReviews(normalizedReviews);
         setError(null);
       } catch (err) {
         console.error('Failed to fetch reviews:', err);
@@ -131,15 +115,7 @@ export default function ReadingWraps() {
         return false;
       }
       
-      try {
-        // Just check that dates are valid
-        new Date(review.start_date);
-        new Date(review.end_date);
-        return true;
-      } catch (error) {
-        console.error('Error parsing date for review:', review.id, error);
-        return false;
-      }
+      return isValidDate(review.start_date) && isValidDate(review.end_date);
     });
     
     // Then apply the time filter

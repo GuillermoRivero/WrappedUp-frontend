@@ -60,21 +60,37 @@ export default function AddReviewPage() {
     setError(null);
     setLoading(true);
 
+    // Format dates to ensure they're valid
+    const formattedStartDate = formData.startDate ? new Date(formData.startDate).toISOString().split('T')[0] : '';
+    const formattedEndDate = formData.endDate ? new Date(formData.endDate).toISOString().split('T')[0] : '';
+
     try {
       const response = await api.post('/api/reviews', {
         open_library_key: selectedBook.openLibraryKey,
         text: formData.text,
         rating: formData.rating,
-        start_date: formData.startDate,
-        end_date: formData.endDate,
+        start_date: formattedStartDate,
+        end_date: formattedEndDate,
       });
 
-      if (response.status !== 200) {
-        throw new Error('Failed to submit review');
+      console.log('Review submission response:', response);
+      
+      // Accept any 2xx status code as success
+      if (response.status >= 200 && response.status < 300) {
+        console.log('Review successfully submitted');
+        
+        // Navigate to reviews page
+        router.push('/reviews');
+        return;
+      } else {
+        console.error('Unexpected status code:', response.status);
+        setError('Unexpected status code: ' + response.status);
       }
-
-      router.push('/reviews');
     } catch (err: any) {
+      console.error('Error submitting review:', err);
+      if (err.response) {
+        console.error('Error response:', err.response.status, err.response.data);
+      }
       setError(err.response?.data?.message || 'Failed to submit review');
     } finally {
       setLoading(false);

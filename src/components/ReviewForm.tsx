@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import api from '@/services/api';
+import api, { reviews } from '@/services/api';
 import BookSearch, { Book as SearchBook } from '@/components/BookSearch';
+import { toApiDateFormat } from '@/utils/dateUtils';
 
 interface ReviewFormProps {
   onSubmit: () => void;
@@ -72,23 +73,37 @@ export default function ReviewForm({ onSubmit, onCancel }: ReviewFormProps) {
 
     setError(null);
     setLoading(true);
+    
+    // Use our utility function to format dates properly
+    const formattedStartDate = toApiDateFormat(formData.startDate);
+    const formattedEndDate = toApiDateFormat(formData.endDate);
+    
+    const requestData = {
+      open_library_key: selectedBook.openLibraryKey,
+      text: formData.text,
+      rating: formData.rating,
+      start_date: formattedStartDate,
+      end_date: formattedEndDate,
+    };
+    
+    console.log('Submitting review request with data:', requestData);
 
     try {
-      const response = await api.post('/api/reviews', {
-        open_library_key: selectedBook.openLibraryKey,
-        text: formData.text,
-        rating: formData.rating,
-        start_date: formData.startDate,
-        end_date: formData.endDate,
-      });
-
-      if (response.status !== 200) {
-        throw new Error('Failed to submit review');
+      // Make the API call
+      const response = await api.post('/api/reviews', requestData);
+      console.log('Review submission response:', response);
+      
+      // Any 2xx status code is success
+      if (response.status >= 200 && response.status < 300) {
+        console.log('Review successfully submitted');
+        onSubmit(); // Just call onSubmit directly
+      } else {
+        console.error('Unexpected status code:', response.status);
+        setError('Unexpected response from server');
       }
-
-      onSubmit();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to submit review');
+      console.error('Error submitting review:', err);
+      setError('Failed to submit review');
     } finally {
       setLoading(false);
     }

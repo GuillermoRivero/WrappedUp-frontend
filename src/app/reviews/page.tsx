@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import api from '@/services/api';
 import { useRouter } from 'next/navigation';
+import { formatDate, normalizeReviewDates } from '@/utils/dateUtils';
 
 interface Review {
   id: string;
@@ -60,8 +61,12 @@ export default function BooksPage() {
     try {
       setLoading(true);
       const response = await api.get('/api/reviews/me');
-      setReviews(response.data);
-      setFilteredReviews(response.data);
+      
+      // Normalize the date fields in the response
+      const normalizedReviews = response.data.map((review: any) => normalizeReviewDates(review));
+      
+      setReviews(normalizedReviews);
+      setFilteredReviews(normalizedReviews);
       setError(null);
     } catch (err: any) {
       console.error('Error fetching reviews:', err);
@@ -466,7 +471,7 @@ export default function BooksPage() {
                     
                     <div className="flex justify-between items-center pt-2 mt-auto border-t border-gray-100">
                       <div className="text-xs text-gray-500">
-                        {new Date(review.start_date).toLocaleDateString()} - {new Date(review.end_date).toLocaleDateString()}
+                        {formatDate(review.start_date)} - {formatDate(review.end_date)}
                       </div>
                       <span 
                         className="text-xs font-medium text-[#365f60] hover:underline"

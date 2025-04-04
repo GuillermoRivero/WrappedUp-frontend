@@ -9,7 +9,8 @@ console.log('Environment Variables:', {
   NEXT_PUBLIC_APP_VERSION: process.env.NEXT_PUBLIC_APP_VERSION
 });
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+// Use environment variable with a guaranteed fallback
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://wrappedupapi.duckdns.org';
 console.log('Using API URL:', API_URL);
 
 interface AuthResponse {
@@ -101,36 +102,9 @@ export const auth = {
       
       // Return the user data with the proper username
       return userData;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Login error:', error);
-      
-      // Enhanced error handling
-      if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
-        const status = error.response.status;
-        const data = error.response.data;
-        
-        if (status === 401) {
-          throw new Error(data?.message || 'Invalid email or password. Please check your credentials and try again.');
-        } else if (status === 404) {
-          throw new Error('User not found. Please check your email or register for a new account.');
-        } else if (status === 400) {
-          throw new Error(data?.message || 'Invalid request. Please check your input and try again.');
-        } else if (status === 403) {
-          throw new Error('Your account has been locked. Please contact support for assistance.');
-        } else if (status === 429) {
-          throw new Error('Too many login attempts. Please try again later.');
-        } else {
-          throw new Error(data?.message || `Server error (${status}). Please try again later.`);
-        }
-      } else if (error.request) {
-        // The request was made but no response was received
-        throw new Error('Unable to reach the server. Please check your internet connection and try again.');
-      } else {
-        // Something happened in setting up the request that triggered an Error
-        throw new Error('An unexpected error occurred. Please try again later.');
-      }
+      throw error;
     }
   },
 
@@ -172,11 +146,13 @@ export const auth = {
       const response = await api.get<AuthResponse>('/api/auth/me');
       const { token: newToken, ...userData } = response.data;
       
+      // Actualizar el token si se recibe uno nuevo
       if (newToken && newToken !== token) {
         localStorage.setItem('token', newToken);
         api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
       }
       
+      // Return the user data with the proper username 
       return userData;
     } catch (error) {
       if ((error as AxiosError).response?.status === 401) {
@@ -187,12 +163,28 @@ export const auth = {
   },
 
   logout() {
+    console.log('Logout: Removing auth token and clearing authorization headers');
+    
+    // Remove token from localStorage
     localStorage.removeItem('token');
+    
+    // Clear Authorization header
     delete api.defaults.headers.common['Authorization'];
+    
+    // Dispatch storage event to sync auth state across tabs/components
+    if (typeof window !== 'undefined') {
+      console.log('Logout: Dispatching storage event to sync auth state');
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('auth-logout'));
+    }
+    
+    console.log('Logout complete');
   },
 };
 
+// User Profile methods
 export const userProfile = {
+  // Get current user's profile
   async getUserProfile() {
     try {
       const response = await api.get<UserProfileData>('/api/profiles');
@@ -203,6 +195,7 @@ export const userProfile = {
     }
   },
   
+  // Update user profile
   async updateProfile(profileData: UpdateUserProfileData) {
     try {
       const response = await api.put<UserProfileData>('/api/profiles', profileData);
@@ -213,14 +206,16 @@ export const userProfile = {
     }
   },
   
+  // Get public profile by username
   async getPublicProfile(username: string) {
     try {
+      // Create a new instance without authentication for public endpoints
       const publicApi = axios.create({
-        baseURL: API_URL, 
+        baseURL: API_URL, // Use hardcoded URL
         headers: {
           'Content-Type': 'application/json',
         },
-        withCredentials: false 
+        withCredentials: false // Don't send cookies
       });
       
       const response = await publicApi.get<UserProfileData>(`/api/profiles/public/${username}`);
@@ -232,7 +227,9 @@ export const userProfile = {
   }
 };
 
+// Wishlist methods
 export const wishlist = {
+  // Get current user's wishlist
   async getUserWishlist() {
     try {
       const response = await api.get('/api/wishlist');
@@ -243,6 +240,7 @@ export const wishlist = {
     }
   },
   
+  // Add a book to the wishlist
   async addToWishlist(data: {
     bookId?: string;
     openLibraryKey?: string;
@@ -250,19 +248,26 @@ export const wishlist = {
     priority?: number;
     isPublic?: boolean;
   }) {
+    // Asegurar que el openLibraryKey tenga el formato correcto (con prefijo '/works/' si no lo tiene)
     if (data.openLibraryKey && !data.openLibraryKey.startsWith('/works/') && !data.openLibraryKey.startsWith('OL')) {
       data.openLibraryKey = '/works/' + data.openLibraryKey;
     }
     
+    console.log('API: Sending wishlist request with data:', data);
     
     try {
       const response = await api.post('/api/wishlist', data);
+      console.log('API: Wishlist response:', response);
       return response;
     } catch (error: any) {
+      console.error('API: Error adding to wishlist:', error);
+      console.error('API: Error details:', error.response?.data);
+      console.error('API: Error status:', error.response?.status);
       throw error;
     }
   },
   
+  // Update a wishlist item
   async updateWishlistItem(id: string, data: {
     description?: string;
     priority?: number;
@@ -277,6 +282,7 @@ export const wishlist = {
     }
   },
   
+  // Remove an item from the wishlist
   async removeFromWishlist(id: string) {
     try {
       await api.delete(`/api/wishlist/${id}`);
@@ -286,14 +292,16 @@ export const wishlist = {
     }
   },
   
+  // Get a user's public wishlist
   async getPublicWishlist(username: string) {
     try {
+      // Create a new instance without authentication for public endpoints
       const publicApi = axios.create({
-        baseURL: API_URL,
+        baseURL: API_URL, // Use hardcoded URL
         headers: {
           'Content-Type': 'application/json',
         },
-        withCredentials: false
+        withCredentials: false // Don't send cookies
       });
       
       console.log(`Fetching public wishlist for username: ${username}`);
@@ -307,21 +315,26 @@ export const wishlist = {
   }
 };
 
+// Book methods
 export const books = {
+  // Search for books
   async searchBooks(query: string, signal?: AbortSignal) {
     try {
+      // Check for token
       const token = localStorage.getItem('token');
       
       if (token) {
+        // Use authenticated API if token exists
         const response = await api.get(`/api/books/search?query=${encodeURIComponent(query)}`, { signal });
         return response.data;
       } else {
+        // Fallback to public API if no token
         const publicApi = axios.create({
-          baseURL: API_URL,
+          baseURL: API_URL, // Use hardcoded URL
           headers: {
             'Content-Type': 'application/json',
           },
-          withCredentials: false 
+          withCredentials: false // Don't send cookies
         });
         
         const response = await publicApi.get(`/api/books/search?query=${encodeURIComponent(query)}`, { signal });
@@ -333,14 +346,16 @@ export const books = {
     }
   },
   
+  // Get a book by OpenLibrary key
   async getBookByOpenLibraryKey(key: string) {
     try {
+      // Create a new instance without authentication for public endpoints
       const publicApi = axios.create({
-        baseURL: API_URL,
+        baseURL: API_URL, // Use hardcoded URL
         headers: {
           'Content-Type': 'application/json',
         },
-        withCredentials: false 
+        withCredentials: false // Don't send cookies
       });
       
       const response = await publicApi.get(`/api/books/openlibrary/${encodeURIComponent(key)}`);
@@ -351,6 +366,7 @@ export const books = {
     }
   },
   
+  // Get a book by ID
   async getBookById(id: string) {
     try {
       const response = await api.get(`/api/books/${id}`);

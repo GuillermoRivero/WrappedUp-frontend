@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { formatDate } from '@/utils/dateUtils';
 
 interface Book {
   id: string;
@@ -107,34 +108,56 @@ export default function ReviewDetail({ review }: ReviewDetailProps) {
   console.log('Final bookPages value:', bookPages);
 
   const metrics = useMemo<BasicMetrics | FullMetrics>(() => {
-    const start = new Date(review.startDate);
-    const end = new Date(review.endDate);
-    const now = new Date();
-    const totalDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
-    const reflectionDays = Math.ceil((now.getTime() - end.getTime()) / (1000 * 60 * 60 * 24));
-    
-    // Basic metrics that don't depend on number of pages
-    const basicMetrics: BasicMetrics = {
-      totalDays,
-      reviewLength: review.text.length,
-      wordsInReview: review.text.split(/\s+/).length,
-      reflectionDays,
-    };
+    try {
+      const start = new Date(review.startDate);
+      const end = new Date(review.endDate);
+      const now = new Date();
+      
+      // Check if dates are valid
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        console.warn('Invalid date detected in metrics calculation');
+        return {
+          totalDays: 0,
+          reviewLength: review.text.length,
+          wordsInReview: review.text.split(/\s+/).length,
+          reflectionDays: 0,
+        };
+      }
+      
+      const totalDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+      const reflectionDays = Math.ceil((now.getTime() - end.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Basic metrics that don't depend on number of pages
+      const basicMetrics: BasicMetrics = {
+        totalDays,
+        reviewLength: review.text.length,
+        wordsInReview: review.text.split(/\s+/).length,
+        reflectionDays,
+      };
 
-    // Additional metrics if we have number of pages
-    if (bookPages > 0) {
-      console.log('Generating page-related metrics with bookPages =', bookPages);
+      // Additional metrics if we have number of pages
+      if (bookPages > 0) {
+        console.log('Generating page-related metrics with bookPages =', bookPages);
+        return {
+          ...basicMetrics,
+          pagesPerDay: (bookPages / totalDays).toFixed(1),
+          timePerPage: (totalDays / bookPages).toFixed(1),
+          reviewDensity: (review.text.length / bookPages).toFixed(1),
+          valuePerPage: ((review.rating / bookPages) * 100).toFixed(1),
+        };
+      }
+
+      console.log('Not generating page-related metrics because bookPages =', bookPages);
+      return basicMetrics;
+    } catch (error) {
+      console.error('Error calculating metrics:', error);
       return {
-        ...basicMetrics,
-        pagesPerDay: (bookPages / totalDays).toFixed(1),
-        timePerPage: (totalDays / bookPages).toFixed(1),
-        reviewDensity: (review.text.length / bookPages).toFixed(1),
-        valuePerPage: ((review.rating / bookPages) * 100).toFixed(1),
+        totalDays: 0,
+        reviewLength: review.text.length,
+        wordsInReview: review.text.split(/\s+/).length,
+        reflectionDays: 0,
       };
     }
-
-    console.log('Not generating page-related metrics because bookPages =', bookPages);
-    return basicMetrics;
   }, [review, bookPages]);
 
   console.log('Final metrics object:', metrics);
@@ -182,7 +205,7 @@ export default function ReviewDetail({ review }: ReviewDetailProps) {
 
       {/* Reading Period */}
       <div className="text-xs sm:text-sm text-[#8aa4a9] mb-6">
-        Read from {new Date(review.startDate).toLocaleDateString()} to {new Date(review.endDate).toLocaleDateString()}
+        Read from {formatDate(review.startDate)} to {formatDate(review.endDate)}
       </div>
 
       {/* Reading Statistics */}

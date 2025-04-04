@@ -7,6 +7,7 @@ import api from '@/services/api';
 import Link from 'next/link';
 import ReviewDetail from '@/components/ReviewDetail';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { normalizeReviewDates } from '@/utils/dateUtils';
 
 interface Book {
   id: string;
@@ -53,7 +54,10 @@ export default function ReviewDetailPage({ params }: { params: { id: string } })
         console.log('API Response for review:', response.data);
         console.log('Book data from API:', response.data.book);
         console.log('Book fields from API:', Object.keys(response.data.book));
-        setReview(response.data);
+        
+        // Normalize date fields in the review data
+        const normalizedReview = normalizeReviewDates(response.data);
+        setReview(normalizedReview);
         setError(null);
       } catch (err: any) {
         console.error('Error fetching review:', err);
